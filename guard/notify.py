@@ -44,10 +44,16 @@ def whatsapp(text: str) -> bool:
         return False
 
 
-def send(text: str, short: str | None = None, photo: str | None = None):
+def configured() -> bool:
+    return bool((TG_TOKEN and TG_CHAT) or (WA_PHONE and WA_KEY))
+
+
+def send(text: str, short: str | None = None, photo: str | None = None) -> bool:
+    """Returns True only if at least one channel actually delivered it."""
     print("\n" + text + "\n")
-    telegram(text, photo)
-    whatsapp(short or text)
+    ok_tg = telegram(text, photo)
+    ok_wa = whatsapp(short or text)
+    return ok_tg or ok_wa
 
 
 def telegram_commands(offset: int):

@@ -205,9 +205,9 @@ async def run(test=False):
                 results.append({"name": wanted, "status": "error", "reason": str(e)[:120]})
 
     if unresolved and not state.get("unresolved_reported"):
-        notify.send("ℹ️ These markets are not on the free Deriv feed, so they are not watched: "
-                    + ", ".join(unresolved))
-        state["unresolved_reported"] = True
+        if notify.send("ℹ️ These markets are not on the free Deriv feed, so they are not watched: "
+                       + ", ".join(unresolved)):
+            state["unresolved_reported"] = True
 
     for r in results:
         if "conf" not in r:
@@ -217,8 +217,8 @@ async def run(test=False):
             if any(s.startswith(key + "|") for s in sent) and f"{key}|invalidated" not in sent \
                     and cfg["alerts"].get("invalidated") and r["poi"]["dead"]:
                 full, short = message(r, "invalidated")
-                notify.send(full, short)
-                sent.add(f"{key}|invalidated"); sent_list.append(f"{key}|invalidated")
+                if notify.send(full, short):
+                    sent.add(f"{key}|invalidated"); sent_list.append(f"{key}|invalidated")
             continue
         kind = alert_for(r)
         visit = r["conf"].get("t0", "")
@@ -234,8 +234,8 @@ async def run(test=False):
             except Exception as e:
                 print("chart error:", e)
         full, short = message(r, kind)
-        notify.send(full, short, photo)
-        sent.add(tag); sent_list.append(tag)
+        if notify.send(full, short, photo):  # only remember alerts that really reached you
+            sent.add(tag); sent_list.append(tag)
 
     if want_status:
         text = summary(results, unresolved)
