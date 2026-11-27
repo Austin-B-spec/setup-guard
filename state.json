@@ -1,8 +1,1 @@
-{
- "sent": [
-  "XAUUSD|sell|3689.64000|3649.97000|approaching|",
-  "Volatility 50 Index|sell|80.17620|79.45890|approaching|"
- ],
- "tg_offset": 0,
- "unresolved_reported": true
-}
+{"sent": [], "tg_offset": 0, "unresolved_reported": false}
