@@ -1,0 +1,75 @@
+# ============================================================
+#  Setup Guard settings - edit this file on GitHub to change things
+# ============================================================
+
+account:
+  balance: 100        # your account size in USD
+  risk_pct: 2         # % of the account to risk per trade (rulebook: 1-2%)
+
+# Which messages you want. true = send, false = stay quiet.
+alerts:
+  approaching: true   # price is getting close to a POI
+  in_zone: true       # price entered the POI (step 4)
+  sweep: false        # 15m liquidity sweep happened (step 5)
+  cisd: true          # change in state of delivery (step 8) - nearly ready
+  ready: true         # step 9 - full trade plan + chart
+  entry_hit: true     # price reached the entry block
+  invalidated: true   # setup or zone broken
+
+# Markets to watch (names as you say them; matched to Deriv's list automatically).
+markets:
+  - XAUUSD
+  - BTCUSD
+  - Volatility 75 Index
+  - US Tech 100
+  - DXY
+  - GBPUSD
+  - Volatility 50 Index
+  - Step Index 200
+  - GBPJPY
+  - EURUSD
+  - USDCAD
+  - EURAUD
+  - CADJPY
+  - XAUEUR
+  - Germany 40
+  - AUDUSD
+  - XAGUSD
+  - NZDUSD
+  - UK 100
+  - AUDCAD
+  - GBPCAD
+  - GBPAUD
+  - AUDNZD
+  - EURGBP
+  - EURCAD
+  - EURCHF
+  - NZDCAD
+  - EURNZD
+  - GBPNZD
+  - NZDCHF
+  - NZDJPY
+  - NZDSGD
+  - CADCHF
+  - USDCHF
+  - GBPCHF
+  - ETHUSD
+  - USDJPY
+
+# Your own zones (optional). The guard still finds zones by itself;
+# zones listed here are watched as well, even if the auto checks disagree.
+manual_zones:
+  XAUUSD:
+    - direction: sell
+      top: 3689.64
+      bottom: 3649.97
+
+# Lot-size maths (money per 1.0 price move for 1.0 lot, on Deriv MT5).
+# Markets not listed get the plan without a lot size - check it in MT5.
+contract_specs:
+  XAUUSD: {value_per_point: 100, min_lot: 0.01, lot_step: 0.01}
+  XAGUSD: {value_per_point: 5000, min_lot: 0.01, lot_step: 0.01}
+  EURUSD: {value_per_point: 100000, min_lot: 0.01, lot_step: 0.01}
+  GBPUSD: {value_per_point: 100000, min_lot: 0.01, lot_step: 0.01}
+  AUDUSD: {value_per_point: 100000, min_lot: 0.01, lot_step: 0.01}
+  NZDUSD: {value_per_point: 100000, min_lot: 0.01, lot_step: 0.01}
