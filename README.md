@@ -1,6 +1,6 @@
 # Setup Guard
 
-A free robot that lives on GitHub. Every 5 minutes it checks your markets
+A free robot that lives on GitHub. Every hour it checks your markets
 against your Varis checklist and messages you on **Telegram** (with a chart)
 and **WhatsApp** (short text) when a setup moves forward or is READY.
 
@@ -33,8 +33,8 @@ It never places trades. It only watches and tells you.
 - 🔵 price reached the entry block
 - 🔴 zone or setup broken
 
-Send your Telegram bot the word **status** at any time; within about 5
-minutes it replies with every market and which step it is on.
+Send your Telegram bot the word **status** at any time; within about an
+hour it replies with every market and which step it is on.
 
 ---
 
@@ -72,7 +72,7 @@ minutes it replies with every market and which step it is on.
 4. Open the **Actions** tab, enable workflows, click **Setup Guard → Run workflow**.
    Within a few minutes you get a test report on Telegram listing every market.
 
-That's it. It now runs every 5 minutes on its own.
+That's it. It now runs every hour on its own (change `SCAN_EVERY_MIN` at the top of `.github/workflows/guard.yml` to scan more often, e.g. 15).
 
 ---
 
@@ -85,7 +85,8 @@ Edit `config.yml` on GitHub (pencil icon):
 - `account`: balance and risk %
 
 ## Good to know
-- GitHub runs the schedule "about" every 5 minutes. Busy times can add a few minutes of delay.
+- Each run stays alive about 5.5 hours and scans on its own clock (1 minute after each hourly candle close), because GitHub's timer alone can skip hours on new free projects. A new run is always queued to take over.
+- Hourly checks can be up to an hour late on the 15-minute entry steps. Set `SCAN_EVERY_MIN` to 15 if you want faster READY alerts.
 - Prices come from Deriv's free public feed. Markets Deriv doesn't offer there
   are listed in the first message and skipped.
 - The checklist is turned into exact rules a computer can follow. Some calls a

@@ -1,8 +1,18 @@
 name: Setup Guard
 
+# How it stays on almost non-stop for free:
+# GitHub's own timer is unreliable on new free projects (it can skip hours), so each
+# run stays alive for about 5.5 hours and scans on its own clock. A new run is
+# queued every hour; it waits behind the current one and takes over when it ends.
+#
+# Change how often it scans here (minutes). 60 = every hour, 15 = every 15 minutes.
+env:
+  SCAN_EVERY_MIN: "60"
+  RUN_FOR_MIN: "325"        # each run lives ~5h25m (GitHub's hard limit is 6h)
+
 on:
   schedule:
-    - cron: "*/5 * * * *"     # every 5 minutes (GitHub may run it a few minutes late)
+    - cron: "3 * * * *"     # queue a fresh run every hour so there is always one waiting
   workflow_dispatch:
     inputs:
       test:
@@ -14,13 +24,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: setup-guard
+  # the long scanning runs line up one after another; a manual test runs on its own
+  group: setup-guard-${{ github.event_name == 'workflow_dispatch' && inputs.test && 'test' || 'scan' }}
   cancel-in-progress: false
 
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,16 +45,41 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
           WHATSAPP_APIKEY: ${{ secrets.WHATSAPP_APIKEY }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.test }}" = "true" ]; then
-            python -m guard.main --test
-          else
-            python -m guard.main
-          fi
-      - name: Save memory of sent alerts (also keeps the schedule alive)
+          TEST_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
         run: |
           git config user.name "setup-guard"
           git config user.email "setup-guard@users.noreply.github.com"
-          git add state.json
-          git diff --cached --quiet || git commit -m "update state" -q
-          git push -q || (git pull --rebase -q && git push -q)
+
+          save() {
+            # Save which alerts were sent (so you never get the same one twice) and,
+            # once a day, a heartbeat so GitHub never switches the schedule off.
+            date -u +%F > .heartbeat
+            git add state.json .heartbeat
+            git diff --cached --quiet && return 0
+            git commit -q -m "update state"
+            for i in 1 2 3; do
+              git push -q && return 0
+              git pull -q --rebase -X theirs || true
+            done
+            echo "could not save state this time; will try again next scan"
+          }
+
+          if [ "$TEST_RUN" = "true" ]; then
+            python -m guard.main --test
+            save
+            exit 0
+          fi
+
+          every=$(( SCAN_EVERY_MIN * 60 ))
+          stop_at=$(( $(date +%s) + RUN_FOR_MIN * 60 ))
+          while :; do
+            git pull -q --rebase -X theirs || true
+            python -m guard.main || echo "scan failed; trying again next time"
+            save
+            now=$(date +%s)
+            # next scan: 1 minute after the next candle close for this interval
+            next=$(( (now / every + 1) * every + 60 ))
+            [ "$next" -ge "$stop_at" ] && break
+            echo "next scan at $(date -u -d @$next +%H:%M) UTC"
+            sleep $(( next - now ))
+          done
